@@ -40,8 +40,17 @@ async def accept(message: Message, state: FSMContext, scheduler: AsyncIOSchedule
 
     scheduler.add_job(
     notification,
+    id=f"{user}_{coin}",
     trigger=IntervalTrigger(minutes=1),
     kwargs={'user': user, 'coin': coin, 'upper_threshold': upper_threshold, 'lower_threshold': lower_threshold, 'bot': bot}
 )
 
     await state.clear()
+
+@router.message(Command("stop"))
+async def stop_notifications(message: Message, scheduler: AsyncIOScheduler):
+    user_id = message.from_user.id
+    jobs_to_remove = [job for job in scheduler.get_jobs() if job.id.startswith(str(user_id))]
+    for job in jobs_to_remove:
+        scheduler.remove_job(job.id)
+    await message.answer("Все уведомления для вас остановлены.")
